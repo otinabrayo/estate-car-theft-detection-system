@@ -1,0 +1,125 @@
+
+erDiagram
+    ESTATE ||--o{ GATE : contains
+    ESTATE ||--o{ RESIDENT : registers
+    ESTATE ||--o{ VEHICLE : manages
+    ESTATE ||--o{ VISITOR : receives
+
+    USER ||--o| RESIDENT : represents
+    RESIDENT ||--o{ VEHICLE : owns
+    RESIDENT ||--o{ VISITOR_PASS : approves
+
+    VISITOR ||--o{ VISITOR_PASS : receives
+    VEHICLE ||--o{ VEHICLE_SESSION : participates_in
+    VISITOR_PASS o|--o{ VEHICLE_SESSION : authorizes
+
+    GATE ||--o{ GATE_EVENT : records
+    VEHICLE_SESSION ||--o{ GATE_EVENT : tracks
+    GATE_EVENT ||--o{ RECOGNITION_RECORD : has
+    VEHICLE ||--o{ RECOGNITION_RECORD : identified_as
+
+    VEHICLE ||--o{ SECURITY_ALERT : associated_with
+    VEHICLE_SESSION o|--o{ SECURITY_ALERT : triggers
+    GATE_EVENT o|--o{ SECURITY_ALERT : triggers
+
+    USER ||--o{ AUDIT_LOG : performs
+
+    ESTATE {
+        uuid id PK
+        string name
+        string address
+    }
+
+    GATE {
+        uuid id PK
+        uuid estate_id FK
+        string name
+        string gate_type
+        boolean is_active
+    }
+
+    USER {
+        uuid id PK
+        string username
+        string password
+        string role
+    }
+
+    RESIDENT {
+        uuid id PK
+        uuid estate_id FK
+        uuid user_id FK
+        string apartment_number
+        string phone
+    }
+
+    VEHICLE {
+        uuid id PK
+        uuid estate_id FK
+        uuid resident_id FK
+        string registration_number
+        string vehicle_type
+        string make
+        string color
+        boolean is_reported_stolen
+    }
+
+    VISITOR {
+        uuid id PK
+        uuid estate_id FK
+        string full_name
+        string identification_reference
+    }
+
+    VISITOR_PASS {
+        uuid id PK
+        uuid visitor_id FK
+        uuid resident_id FK
+        string status
+        datetime valid_from
+        datetime valid_until
+    }
+
+    VEHICLE_SESSION {
+        uuid id PK
+        uuid vehicle_id FK
+        uuid visitor_pass_id FK
+        datetime entry_time
+        datetime exit_time
+        string status
+    }
+
+    GATE_EVENT {
+        uuid id PK
+        uuid gate_id FK
+        uuid session_id FK
+        string event_type
+        datetime occurred_at
+        string event_status
+    }
+
+    RECOGNITION_RECORD {
+        uuid id PK
+        uuid gate_event_id FK
+        uuid vehicle_id FK
+        string detected_plate
+        float confidence
+        string image_reference
+    }
+
+    SECURITY_ALERT {
+        uuid id PK
+        uuid vehicle_id FK
+        uuid session_id FK
+        uuid gate_event_id FK
+        string alert_type
+        string severity
+        string status
+    }
+
+    AUDIT_LOG {
+        uuid id PK
+        uuid user_id FK
+        string action
+        datetime created_at
+    }

@@ -1,0 +1,28 @@
+
+flowchart TB
+    A["CCTV / Uploaded Images / Video"]
+    B["Vehicle Detection - YOLO + OpenCV"]
+    C["Plate Recognition - PaddleOCR"]
+    D["FastAPI Verification Service"]
+    E["Django REST API"]
+    F[("PostgreSQL")]
+    G[("Apache Kafka")]
+    H[("Redis")]
+    I[("MinIO Evidence Storage")]
+    J["Kafka Event Consumer"]
+    K["Next.js Security Dashboard"]
+    L["Security Alerts"]
+
+    A --> B
+    B --> C
+    C --> I
+    C --> D
+    D --> E
+    E <--> F
+    D <--> H
+    D --> G
+    G --> J
+    J --> E
+    E --> L
+    L --> K
+    K <--> E
