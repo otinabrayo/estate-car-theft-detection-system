@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Estate Car Theft Detection System
 
 An intelligent vehicle security and monitoring platform for gated residential estates.
@@ -40,3 +41,7 @@ Phase 1 – Project foundation and documentation.
 ## License
 
 MIT
+=======
+# estate-car-theft-detection-system
+An intelligent residential estate vehicle security system integrating computer vision, automatic number plate recognition, real-time event streaming, and vehicle entry/exit verification to detect suspicious vehicle movements.
+>>>>>>> c6c5ea239e7cbda1202f4be7a3f8becb6b008fcd
