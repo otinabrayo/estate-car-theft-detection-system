@@ -47,7 +47,7 @@ services:
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
 
   minio:
-    image: quay.io/minio/aistor/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     container_name: car-theft-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -59,6 +59,7 @@ services:
       - "9001:9001"
     volumes:
       - minio_data:/data
+      # - ./minio.license:/minio.license
 
 volumes:
   postgres_data:
