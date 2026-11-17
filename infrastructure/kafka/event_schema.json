@@ -1,0 +1,113 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {
+      "format": "uuid",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "event_type": {
+      "enum": [
+        "VEHICLE_ENTRY",
+        "VEHICLE_EXIT"
+      ],
+      "title": "Event Type",
+      "type": "string"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "estate_id": {
+      "format": "uuid",
+      "title": "Estate Id",
+      "type": "string"
+    },
+    "gate_id": {
+      "format": "uuid",
+      "title": "Gate Id",
+      "type": "string"
+    },
+    "direction": {
+      "enum": [
+        "ENTRY",
+        "EXIT"
+      ],
+      "title": "Direction",
+      "type": "string"
+    },
+    "detected_registration": {
+      "maxLength": 20,
+      "minLength": 2,
+      "title": "Detected Registration",
+      "type": "string"
+    },
+    "confidence": {
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "source": {
+      "default": "SIMULATOR",
+      "enum": [
+        "SIMULATOR",
+        "ANPR",
+        "MANUAL"
+      ],
+      "title": "Source",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "format": "uuid",
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "visitor_pass_code": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Visitor Pass Code"
+    },
+    "evidence_object_key": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Evidence Object Key"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "event_type",
+    "estate_id",
+    "gate_id",
+    "direction",
+    "detected_registration",
+    "confidence"
+  ],
+  "title": "GateEvent",
+  "type": "object"
+}

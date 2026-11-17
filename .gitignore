@@ -1,39 +1,3 @@
-<<<<<<< HEAD
-# Environment variables
-.env
-.env.*
-
-# Python
-__pycache__/
-*.py[cod]
-venv/
-.venv/
-.pytest_cache/
-
-# Django
-db.sqlite3
-media/
-staticfiles/
-
-# Frontend
-node_modules/
-.next/
-dist/
-
-# IDE
-.vscode/
-.idea/
-
-# Operating system
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-
-# Docker
-*.pid
-=======
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -256,4 +220,13 @@ __marimo__/
 .streamlit/secrets.toml
 rough.txt
 
->>>>>>> c6c5ea239e7cbda1202f4be7a3f8becb6b008fcd
+# Phase 3 secrets
+.env.phase3
+
+# Local event processing database
+services/event_consumer/processed_events.db
+
+# Python
+.venv-phase3/
+__pycache__/
+*.pyc
