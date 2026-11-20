@@ -105,10 +105,11 @@ class Vehicle(models.Model):
         ]
 
     def clean(self):
+        estate_id = getattr(self, "estate_id", None)
         if (
-            self.registered_by_id
-            and self.estate_id
-            and self.registered_by.apartment.block.estate_id != self.estate_id
+            self.registered_by
+            and estate_id
+            and self.registered_by.apartment.block.estate_id != estate_id
         ):
             raise ValidationError(
                 "The registering resident must belong to this estate."
@@ -200,11 +201,19 @@ class AuthorizedDriver(models.Model):
                 "valid_until": "Authorization must end after it begins."
             })
 
+        resident_id = getattr(self, "resident_id", None)
+        vehicle_id = getattr(self, "vehicle_id", None)
+
+        resident = getattr(self, "resident", None)
+        vehicle = getattr(self, "vehicle", None)
+
         if (
-            self.resident_id
-            and self.vehicle_id
-            and self.resident.apartment.block.estate_id
-            != self.vehicle.estate_id
+            resident_id
+            and vehicle_id
+            and resident is not None
+            and vehicle is not None
+            and resident.apartment.block.estate_id
+            != vehicle.estate_id
         ):
             raise ValidationError(
                 "The authorized resident must belong to the vehicle's estate."

@@ -12,6 +12,7 @@ from pydantic import ValidationError             # type: ignore
 from services.shared.event_contract import GateEvent
 
 from services.event_consumer.dedupe import EventLedger
+from services.event_consumer.processor import EventProcessor
 from services.event_consumer.django_client import DjangoGateClient
 from services.event_consumer.reliability import (
     EventPublisher,
@@ -83,6 +84,9 @@ class GateEventConsumer:
 
         self.ledger = EventLedger(LEDGER_PATH)
         self.django = DjangoGateClient()
+        self.processor = EventProcessor(
+            django_client=self.django,
+        )
         self.publisher = EventPublisher(BOOTSTRAP)
 
     def commit(self, message):
@@ -197,7 +201,7 @@ class GateEventConsumer:
 
         try:
 
-            result = self.django.process_event(event)
+            result = self.processor.process_event(event)
 
             self.ledger.mark_processed(
                 event.event_id,

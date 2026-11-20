@@ -16,6 +16,11 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("DJANGO_SECRET_KEY is missing from .env")
 
+DJANGO_INTERNAL_SERVICE_TOKEN = os.getenv(
+    "DJANGO_INTERNAL_SERVICE_TOKEN",
+    ""
+)
+
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() == "true"
 
 ALLOWED_HOSTS = os.getenv(

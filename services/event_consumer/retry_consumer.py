@@ -15,6 +15,7 @@ from pydantic import ValidationError             # type: ignore
 
 from services.shared.event_contract import GateEvent
 
+from services.event_consumer.processor import EventProcessor
 from services.event_consumer.dedupe import EventLedger
 from services.event_consumer.django_client import DjangoGateClient
 
@@ -83,6 +84,12 @@ class GateRetryConsumer:
 
         self.ledger = EventLedger(LEDGER_PATH)
         self.django = DjangoGateClient()
+
+        # Use the same processing pipeline as the main consumer.
+        self.processor = EventProcessor(
+            django_client=self.django,
+        )
+
         self.publisher = EventPublisher(BOOTSTRAP)
 
     def commit(self, message):
@@ -221,7 +228,7 @@ class GateRetryConsumer:
 
         try:
 
-            self.django.process_event(event)
+            self.processor.process_event(event)
 
             self.ledger.mark_processed(
                 event.event_id,

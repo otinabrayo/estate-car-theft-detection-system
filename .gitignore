@@ -219,6 +219,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 rough.txt
+final.txt
 
 # Phase 3 secrets
 .env.phase3
@@ -230,3 +231,14 @@ services/event_consumer/processed_events.db
 .venv-phase3/
 __pycache__/
 *.pyc
+.venv-vision/
+
+.env.phase4
+
+.venv-verification/
+.env.phase5
+
+
+# Computer vision model weights
+services/vision_service/models/*.pt
+services/vision_service/models/*.onnx

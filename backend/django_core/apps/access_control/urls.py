@@ -6,6 +6,7 @@ from .views import (
     VehicleMovementSessionListAPIView,
     GateAccessEventListAPIView,
 )
+from .internal_views import VehicleSessionLookupAPIView
 
 urlpatterns = [
     path(
@@ -27,5 +28,10 @@ urlpatterns = [
         "gate-events/",
         GateAccessEventListAPIView.as_view(),
         name="gate-events",
+    ),
+    path(
+        "internal/vehicles/session-lookup/",
+        VehicleSessionLookupAPIView.as_view(),
+        name="internal-vehicle-session-lookup",
     ),
 ]
