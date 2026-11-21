@@ -28,4 +28,5 @@ urlpatterns = [
     path("api/v1/", include("apps.visitors.urls")),
     path("api/v1/", include("apps.access_control.urls")),
     path("api/v1/", include("apps.alerts.urls")),
+    path("api/v1/", include("apps.incidents.urls")),
 ]

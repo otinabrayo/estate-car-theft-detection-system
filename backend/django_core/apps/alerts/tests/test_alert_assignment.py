@@ -107,7 +107,7 @@ class SecurityAlertAssignmentTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
 
-        self.alert.refresh_from_db()
+        self.alert.refresh_from_db(from_queryset=SecurityAlert.objects.all())
 
         self.assertEqual(
             self.alert.assigned_to,
@@ -128,7 +128,7 @@ class SecurityAlertAssignmentTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
 
-        self.alert.refresh_from_db()
+        self.alert.refresh_from_db(from_queryset=SecurityAlert.objects.all())
 
         self.assertIsNone(self.alert.assigned_to)
 
@@ -157,7 +157,7 @@ class SecurityAlertAssignmentTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
 
-        self.alert.refresh_from_db()
+        self.alert.refresh_from_db(from_queryset=SecurityAlert.objects.all())
 
         self.assertEqual(
             self.alert.assigned_to,
@@ -189,7 +189,7 @@ class SecurityAlertAssignmentTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
 
-        self.alert.refresh_from_db()
+        self.alert.refresh_from_db(from_queryset=SecurityAlert.objects.all())
 
         self.assertIsNone(self.alert.assigned_to)
 
@@ -214,6 +214,6 @@ class SecurityAlertAssignmentTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
 
-        self.alert.refresh_from_db()
+        self.alert.refresh_from_db(from_queryset=SecurityAlert.objects.all())
 
         self.assertIsNone(self.alert.assigned_to)

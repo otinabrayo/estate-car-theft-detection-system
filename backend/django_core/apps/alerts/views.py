@@ -3,6 +3,7 @@ from typing import cast
 
 from django.db import transaction
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -142,173 +143,188 @@ class SecurityAlertViewSet(viewsets.ReadOnlyModelViewSet):
                 "You cannot manage alerts in this estate."
             )
 
+    def get_locked_alert(self):
+        """
+        Retrieve and lock an alert before modifying its state.
+
+        Must be called inside transaction.atomic().
+        """
+        alert = get_object_or_404(
+            self.get_queryset().select_for_update(of=("self",)),
+            pk=self.kwargs["pk"],
+        )
+
+        self.check_alert_access(alert)
+
+        return alert
+
     @action(detail=True, methods=["post"])
     def acknowledge(self, request, pk=None):
-        alert = self.get_object()
-        self.check_alert_access(alert)
+        with transaction.atomic():
+            alert = self.get_locked_alert()
 
-        if alert.status != SecurityAlert.Status.OPEN:
-            raise ValidationError(
-                "Only open alerts can be acknowledged."
-            )
+            if alert.status != SecurityAlert.Status.OPEN:
+                raise ValidationError(
+                    "Only open alerts can be acknowledged."
+                )
 
-        alert.status = SecurityAlert.Status.ACKNOWLEDGED
-        alert.acknowledged_by = request.user
-        alert.acknowledged_at = timezone.now()
-
-        alert.save(update_fields=[
-            "status",
-            "acknowledged_by",
-            "acknowledged_at",
-            "updated_at",
-        ])
-
-        return Response(self.get_serializer(alert).data)
-
-    @action(detail=True, methods=["post"])
-    def investigate(self, request, pk=None):
-        alert = self.get_object()
-        self.check_alert_access(alert)
-
-        if alert.status not in [
-            SecurityAlert.Status.OPEN,
-            SecurityAlert.Status.ACKNOWLEDGED,
-        ]:
-            raise ValidationError(
-                "This alert cannot be moved into investigation."
-            )
-
-        alert.status = SecurityAlert.Status.INVESTIGATING
-
-        if not alert.acknowledged_by:
+            alert.status = SecurityAlert.Status.ACKNOWLEDGED
             alert.acknowledged_by = request.user
             alert.acknowledged_at = timezone.now()
 
-        alert.save(update_fields=[
-            "status",
-            "acknowledged_by",
-            "acknowledged_at",
-            "updated_at",
-        ])
+            alert.save(update_fields=[
+                "status",
+                "acknowledged_by",
+                "acknowledged_at",
+                "updated_at",
+            ])
 
         return Response(self.get_serializer(alert).data)
 
+
+    @action(detail=True, methods=["post"])
+    def investigate(self, request, pk=None):
+        with transaction.atomic():
+            alert = self.get_locked_alert()
+
+            if alert.status not in [
+                SecurityAlert.Status.OPEN,
+                SecurityAlert.Status.ACKNOWLEDGED,
+            ]:
+                raise ValidationError(
+                    "This alert cannot be moved into investigation."
+                )
+
+            alert.status = SecurityAlert.Status.INVESTIGATING
+
+            if not alert.acknowledged_by:
+                alert.acknowledged_by = request.user
+                alert.acknowledged_at = timezone.now()
+
+            alert.save(update_fields=[
+                "status",
+                "acknowledged_by",
+                "acknowledged_at",
+                "updated_at",
+            ])
+
+        return Response(self.get_serializer(alert).data)
+
+
     @action(detail=True, methods=["post"])
     def assign(self, request, pk=None):
-        alert = self.get_object()
-        self.check_alert_access(alert)
-
         serializer = AlertAssignmentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        assignee_id = serializer.validated_data["assigned_to"]
+        validated_data = cast(dict[str, int], serializer.validated_data)
+        assignee_id = validated_data["assigned_to"]
 
-        membership = EstateMembership.objects.filter(
-            user_id=assignee_id,
-            estate=alert.estate,
-            is_active=True,
-            role__in=["ESTATE_ADMIN", "SECURITY"],
-        ).select_related("user").first()
+        with transaction.atomic():
+            alert = self.get_locked_alert()
 
-        if membership:
-            assignee = membership.user
-
-        elif is_platform_admin(request.user):
-            from django.contrib.auth import get_user_model
-
-            User = get_user_model()
-
-            assignee = User.objects.filter(
-                id=assignee_id,
+            membership = EstateMembership.objects.filter(
+                user_id=assignee_id,
+                estate=alert.estate,
                 is_active=True,
-            ).first()
+                role__in=["ESTATE_ADMIN", "SECURITY"],
+            ).select_related("user").first()
 
-            if not assignee:
+            if membership:
+                assignee = membership.user
+
+            elif is_platform_admin(request.user):
+                from django.contrib.auth import get_user_model
+
+                User = get_user_model()
+
+                assignee = User.objects.filter(
+                    id=assignee_id,
+                    is_active=True,
+                ).first()
+
+                if not assignee:
+                    raise ValidationError(
+                        "Assignee does not exist or is inactive."
+                    )
+
+            else:
                 raise ValidationError(
-                    "Assignee does not exist or is inactive."
+                    "Assignee must be active security staff or an "
+                    "estate administrator in this estate."
                 )
 
-        else:
-            raise ValidationError(
-                "Assignee must be active security staff or an "
-                "estate administrator in this estate."
-            )
+            alert.assigned_to = assignee
 
-        alert.assigned_to = assignee
-
-        alert.save(update_fields=[
-            "assigned_to",
-            "updated_at",
-        ])
+            alert.save(update_fields=[
+                "assigned_to",
+                "updated_at",
+            ])
 
         return Response(self.get_serializer(alert).data)
 
     @action(detail=True, methods=["post"])
     def resolve(self, request, pk=None):
-        alert = self.get_object()
-        self.check_alert_access(alert)
-
         serializer = AlertResolutionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        if alert.status not in [
-            SecurityAlert.Status.ACKNOWLEDGED,
-            SecurityAlert.Status.INVESTIGATING,
-        ]:
-            raise ValidationError(
-                "Acknowledge or investigate an alert before resolving it."
-            )
+        with transaction.atomic():
+            alert = self.get_locked_alert()
 
-        alert.status = SecurityAlert.Status.RESOLVED
-        alert.resolved_by = request.user
-        alert.resolved_at = timezone.now()
-        alert.resolution_notes = serializer.validated_data[
-            "resolution_notes"
-        ]
+            if alert.status not in [
+                SecurityAlert.Status.ACKNOWLEDGED,
+                SecurityAlert.Status.INVESTIGATING,
+            ]:
+                raise ValidationError(
+                    "Only acknowledged or investigating alerts can be resolved."
+                )
 
-        alert.save(update_fields=[
-            "status",
-            "resolved_by",
-            "resolved_at",
-            "resolution_notes",
-            "updated_at",
-        ])
+            alert.status = SecurityAlert.Status.RESOLVED
+            alert.resolved_by = request.user
+            alert.resolved_at = timezone.now()
+            validated_data = cast(dict[str, str], serializer.validated_data)
+            alert.resolution_notes = validated_data["resolution_notes"]
+
+            alert.save(update_fields=[
+                "status",
+                "resolved_by",
+                "resolved_at",
+                "resolution_notes",
+                "updated_at",
+            ])
 
         return Response(self.get_serializer(alert).data)
 
     @action(detail=True, methods=["post"])
     def dismiss(self, request, pk=None):
-        alert = self.get_object()
-        self.check_alert_access(alert)
-
         serializer = AlertDismissalSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        if alert.status in [
-            SecurityAlert.Status.RESOLVED,
-            SecurityAlert.Status.DISMISSED,
-        ]:
-            raise ValidationError(
-                "This alert is already closed."
-            )
+        with transaction.atomic():
+            alert = self.get_locked_alert()
 
-        alert.status = SecurityAlert.Status.DISMISSED
-        alert.dismissed_by = request.user
-        alert.dismissed_at = timezone.now()
-        alert.dismissal_reason = serializer.validated_data[
-            "dismissal_reason"
-        ]
+            if alert.status in [
+                SecurityAlert.Status.RESOLVED,
+                SecurityAlert.Status.DISMISSED,
+            ]:
+                raise ValidationError(
+                    "This alert is already closed."
+                )
 
-        alert.save(update_fields=[
-            "status",
-            "dismissed_by",
-            "dismissed_at",
-            "dismissal_reason",
-            "updated_at",
-        ])
+            alert.status = SecurityAlert.Status.DISMISSED
+            alert.dismissed_by = request.user
+            alert.dismissed_at = timezone.now()
+            validated_data = cast(dict[str, str], serializer.validated_data)
+            alert.dismissal_reason = validated_data["dismissal_reason"]
+
+            alert.save(update_fields=[
+                "status",
+                "dismissed_by",
+                "dismissed_at",
+                "dismissal_reason",
+                "updated_at",
+            ])
 
         return Response(self.get_serializer(alert).data)
-
 
 class OwnerConfirmationInternalCreateAPIView(APIView):
 

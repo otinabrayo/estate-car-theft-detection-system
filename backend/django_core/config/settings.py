@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     "apps.vehicles.apps.VehiclesConfig",
     "apps.visitors.apps.VisitorsConfig",
     "apps.access_control.apps.AccessConfig",
-    "apps.alerts.apps.AlertsConfig"
+    "apps.alerts.apps.AlertsConfig",
+    "apps.incidents.apps.IncidentsConfig",
 ]
 
 
